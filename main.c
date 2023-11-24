@@ -51,5 +51,4 @@ int main(int argc, char* argv[]) {
         }
         hid_close(handle);
     }
-
 }
