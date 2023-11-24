@@ -18,8 +18,10 @@ FILE(GLOB sources *.c)
 add_executable(tmate2 ${sources})
 
 target_link_libraries(tmate2
-  ${GTK3_LIBRARIES}
-  )
+    ${GTK3_LIBRARIES}
+    libudev.so
+    libhidapi-hidraw.so
+)
 
 include(CTest)
 enable_testing()
