@@ -1,6 +1,36 @@
 #pragma once
 
-struct _bitfield {
+#include <stdint.h>
+
+// read_format = 'p8' + 'u16' * 3 + 'b1' * 8 + 'p7' + 'b1'
+
+#pragma pack(1)
+
+struct read_bitfield {
+    unsigned int: 8;
+    unsigned int main_encoder: 16;
+    unsigned int e2_encoder: 16;
+    unsigned int e1_encoder: 16;
+
+    unsigned int f1_button: 1;
+    unsigned int f2_button: 1;
+    unsigned int f3_button: 1;
+    unsigned int f4_button: 1;
+    unsigned int f5_button: 1;
+    unsigned int f6_button: 1;
+    unsigned int main_button: 1;
+    unsigned int e2_button: 1;   // 
+
+    unsigned int e1_button: 1;
+};
+
+union read_buffer {
+    struct read_bitfield r;
+    char d[9];
+};
+
+
+struct write_bitfield {
     unsigned int :8;        // 1
 
     unsigned int: 1;
@@ -184,7 +214,7 @@ struct _bitfield {
 
     unsigned usb_led: 1;
     unsigned lock_led: 1;
-    unsigned click: 1;  // not documented, toggle to make a click
+    unsigned click: 1;  // not documented, makes a click when the value is changed
     unsigned int: 5;       // 34
 
     unsigned int rgb_red: 8;    // 35
@@ -202,8 +232,8 @@ struct _bitfield {
     unsigned int speed_trans: 8;        // 45
 };
 
-typedef union _display_bitfield {
-    struct _bitfield b;
+union write_buffer {
+    struct write_bitfield w;
     char d[45];
-} DISPLAY_BITFIELD;
+};
 
