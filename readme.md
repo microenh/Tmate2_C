@@ -9,7 +9,7 @@ For Linux, 50-TMATE2.rules needs to be added to /etc/udev/rules.d to add the Tma
 
 The TMate 2 appears as a USB HID device. There are over 170 different LCD segments, each controlled by a bit in uploaded data stream. The names of the data fields are taken from the Tmate2LcdSegment.pdf document. There are additional fields to turn the two (Green and Red) LED's on or off, to set the RGB backlight color, to set the contrast and step size for the main encoder and acceleration.
 
-## input (not currently implemented)
+## input
 To get the state of the encoders and buttons, read the device. The first byte is a 1, the next 8 bytes are four 16-bit signed words:
 1. Main Encoder Position
 2. E1 Encoder Posistion
