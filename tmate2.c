@@ -1,7 +1,5 @@
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+// #include <stdio.h>
 #include <unistd.h>
 #include <hidapi/hidapi.h>
 
@@ -13,27 +11,35 @@
 #define PRODUCT_ID 0x0614
 #define PRESS_CT 80;
 
-void (*main_move)(int delta);
-void (*e1_move)(int delta);
-void (*e2_move)(int delta);
-void (*main_tap)(void);
-void (*e1_tap)(void);
-void (*e2_tap)(void);
-void (*main_press)(void);
-void (*e1_press)(void);
-void (*e2_press)(void);
-void (*f1_tap)(void);
-void (*f2_tap)(void);
-void (*f3_tap)(void);
-void (*f4_tap)(void);
-void (*f5_tap)(void);
-void (*f6_tap)(void);
-void (*f1_press)(void);
-void (*f2_press)(void);
-void (*f3_press)(void);
-void (*f4_press)(void);
-void (*f5_press)(void);
-void (*f6_press)(void);
+static void (*move[9])(int);
+static void (*tap[9])(void);
+static void (*press[9])(void);
+
+void set_main_move(void (*cb)(int)) {move[0] = cb;}
+void set_e1_move(void (*cb)(int)) {move[1] = cb;}
+void set_e2_move(void (*cb)(int)) {move[2] = cb;}
+
+void set_main_tap(void (*cb)(void)) {tap[0] = cb;}
+void set_e1_tap(void (*cb)(void)) {tap[1] = cb;}
+void set_e2_tap(void (*cb)(void)) {tap[2] = cb;}
+
+void set_f1_tap(void (*cb)(void)) {tap[3] = cb;}
+void set_f2_tap(void (*cb)(void)) {tap[4] = cb;}
+void set_f3_tap(void (*cb)(void)) {tap[5] = cb;}
+void set_f4_tap(void (*cb)(void)) {tap[6] = cb;}
+void set_f5_tap(void (*cb)(void)) {tap[7] = cb;}
+void set_f6_tap(void (*cb)(void)) {tap[8] = cb;}
+
+void set_main_press(void (*cb)(void)) {press[0] = cb;}
+void set_e1_press(void (*cb)(void)) {press[1] = cb;}
+void set_e2_press(void (*cb)(void)) {press[2] = cb;}
+
+void set_f1_press(void (*cb)(void)) {press[3] = cb;}
+void set_f2_press(void (*cb)(void)) {press[4] = cb;}
+void set_f3_press(void (*cb)(void)) {press[5] = cb;}
+void set_f4_press(void (*cb)(void)) {press[6] = cb;}
+void set_f5_press(void (*cb)(void)) {press[7] = cb;}
+void set_f6_press(void (*cb)(void)) {press[8] = cb;}
 
 static union write_buffer write_data;
 static union read_buffer read_data;
@@ -42,43 +48,6 @@ static bool btn_down[9];
 static bool btn_press[9];
 static int btn_ctr[9];
 static hid_device *handle;
-
-static int encoder_delta(int which, unsigned int current) {
-    static unsigned int old_encoder_value[3];
-    int o = old_encoder_value[which];
-    if (current == o)
-        return 0;
-    old_encoder_value[which] = current;
-    int delta = current - o;
-    if (delta > 32768)
-        delta -= 65536;
-    else if (delta < -32768)
-        delta += 65536;
-    return delta;
-}
-
-bool init_tmate2(void) {
-    handle = hid_open(VENDOR_ID, PRODUCT_ID, NULL);
-    if (handle) {
-        set_rgb(0xff, 0xff, 0xff);
-        display_main_number(main_encoder);
-        main_encoder_setup(1, 100, 1000, 32, 64, 10);
-        write_data.w.hz = 1;
-
-        // get initial encoder values
-        hid_read(handle, read_data.d, 9);
-        encoder_delta(0, read_data.r.main_encoder);
-        encoder_delta(1, read_data.r.e1_encoder);
-        encoder_delta(2, read_data.r.e2_encoder);
-        return true;
-    }
-    return false;
-}
-
-void close_tmate2(void) {
-    hid_close(handle);
-    handle = NULL;
-}
 
 void update_main_digit(int which, char value) {
     int left_bits = main_layout[value - 32][0];
@@ -209,20 +178,38 @@ void main_encoder_setup(int speed1, int speed2, int speed3, int trans12, int tra
 
 
 void click(void) {
-    write_data.w.click = 1;
+    write_data.w.click = !write_data.w.click;
     hid_write(handle, write_data.d, 44);
 }
 
-static int check_button(int which, bool state) {
+static void check_encoder(int which, unsigned int current) {
+    static unsigned int old_encoder_value[3];
+    int o = old_encoder_value[which];
+    if (current == o)
+        return;
+    old_encoder_value[which] = current;
+    if (move[which]) {
+        int delta = current - o;
+        if (delta > 32768)
+            delta -= 65536;
+        else if (delta < -32768)
+            delta += 65536;
+        move[which](delta);
+    }
+}
+
+static void check_button(int which, bool state) {
     if (state) {
         if (btn_down[which]) {
             btn_ctr[which] = 0;
             btn_down[which] = false;
             if (btn_press[which]) {
                 btn_press[which] = false;
-                return 2;
+                if (press[which])
+                    press[which]();
             } else {
-                return 1;
+                if (tap[which])
+                    tap[which]();
             }
         }
     } else {
@@ -236,103 +223,50 @@ static int check_button(int which, bool state) {
             btn_ctr[which] = PRESS_CT;
         }
     }
-    return 0;
+}
+
+bool init_tmate2(void) {
+    handle = hid_open(VENDOR_ID, PRODUCT_ID, NULL);
+    if (handle) {
+        set_rgb(0xff, 0xff, 0xff);
+        display_main_number(main_encoder);
+        main_encoder_setup(1, 100, 1000, 32, 64, 10);
+        write_data.w.hz = 1;
+
+        // get initial encoder values
+        hid_read(handle, read_data.d, 9);
+        check_encoder(0, read_data.r.main_encoder);
+        check_encoder(1, read_data.r.e1_encoder);
+        check_encoder(2, read_data.r.e2_encoder);
+        return true;
+    }
+    return false;
+}
+
+void close_tmate2(void) {
+    write_data.w.click = 0; // so no click on next startup
+    hid_write(handle, write_data.d, 44);
+    hid_write(handle, write_data.d, 44);    // no click reset unless two calls
+    hid_close(handle);
+    handle = NULL;
 }
 
 void tmate2_tick(void) {
     hid_read(handle, read_data.d, 9);
-    int delta = encoder_delta(0, read_data.r.main_encoder);
-    if (delta && main_move)
-        main_move(delta);
+    check_encoder(0, read_data.r.main_encoder);
+    check_encoder(1, read_data.r.e1_encoder);
+    check_encoder(2, read_data.r.e2_encoder);
 
-    delta = encoder_delta(1, read_data.r.e1_encoder);
-    if (delta && e1_move)
-        e1_move(delta);
+    check_button(0, read_data.r.main_button);
+    check_button(1, read_data.r.e1_button);
+    check_button(2, read_data.r.e2_button);
 
-    delta = encoder_delta(2, read_data.r.e2_encoder);
-    if (delta && e2_move)
-        e2_move(delta);
-
-    int b_action = check_button(0, read_data.r.main_button);
-    if (b_action == 1) {
-        if (main_tap)
-            main_tap();
-    } else if (b_action == 2) {
-        if (main_press)
-            main_press();
-    }
-
-    b_action = check_button(1, read_data.r.e1_button);
-    if (b_action == 1) {
-        if (e1_tap)
-            e1_tap();
-    } else if (b_action == 2) {
-        if (e1_press)
-            e1_press();
-    }
-
-    b_action = check_button(2, read_data.r.e2_button);
-    if (b_action == 1) {
-        if (e2_tap)
-            e2_tap();
-    } else if (b_action == 2) {
-        if (e2_press)
-            e2_press();
-    }
-
-    b_action = check_button(3, read_data.r.f1_button);
-    if (b_action == 1) {
-        if (f1_tap)
-            f1_tap();
-    } else if (b_action == 2) {
-        if (f1_press)
-            f1_press();
-    }
-
-    b_action = check_button(4, read_data.r.f2_button);
-    if (b_action == 1) {
-        if (f2_tap)
-            f2_tap();
-    } else if (b_action == 2) {
-        if (f2_press)
-            f2_press();
-    }
-
-    b_action = check_button(5, read_data.r.f3_button);
-    if (b_action == 1) {
-        if (f3_tap)
-            f3_tap();
-    } else if (b_action == 2) {
-        if (f3_press)
-            f3_press();
-    }
-
-    b_action = check_button(6, read_data.r.f4_button);
-    if (b_action == 1) {
-        if (f4_tap)
-            f4_tap();
-    } else if (b_action == 2) {
-        if (f4_press)
-            f4_press();
-    }
-
-    b_action = check_button(7, read_data.r.f5_button);
-    if (b_action == 1) {
-        if (f5_tap)
-            f5_tap();
-    } else if (b_action == 2) {
-        if (f5_press)
-            f5_press();
-    }
-
-    b_action = check_button(8, read_data.r.f6_button);
-    if (b_action == 1) {
-        if (f6_tap)
-            f6_tap();
-    } else if (b_action == 2) {
-        if (f6_press)
-            f6_press();
-    }
+    check_button(3, read_data.r.f1_button);
+    check_button(4, read_data.r.f2_button);
+    check_button(5, read_data.r.f3_button);
+    check_button(6, read_data.r.f4_button);
+    check_button(7, read_data.r.f5_button);
+    check_button(8, read_data.r.f6_button);
 
     hid_write(handle, write_data.d, 44);
 }
