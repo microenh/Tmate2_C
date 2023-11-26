@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-
-// read_format = 'p8' + 'u16' * 3 + 'b1' * 8 + 'p7' + 'b1'
-
+// pack on single byte boundary
 #pragma pack(1)
 
 struct read_bitfield {
@@ -19,9 +16,10 @@ struct read_bitfield {
     unsigned int f5_button: 1;
     unsigned int f6_button: 1;
     unsigned int main_button: 1;
-    unsigned int e2_button: 1;   // 
+    unsigned int e2_button: 1;
 
     unsigned int e1_button: 1;
+    // unsigned int buttons: 9;
 };
 
 union read_buffer {
@@ -226,10 +224,10 @@ struct write_bitfield {
     unsigned int encoder_speed1: 8;     // 40
     unsigned int encoder_speed2: 8;     // 41
     unsigned int encoder_speed3: 8;     // 42
-    unsigned int encoder_trans12: 8;    // 43
+    unsigned int encoder_trans12: 8;    // 43   // 32 steps / revolution
     unsigned int encoder_trans23: 8;    // 44
 
-    unsigned int speed_trans: 8;        // 45
+    unsigned int trans_time: 8;        // 45
 };
 
 union write_buffer {
