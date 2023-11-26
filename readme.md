@@ -48,3 +48,7 @@ peridically call tmate2_tick()
 when done call tmate2_close()
 
 see main.c for a trivial example.
+
+## Libraries
+sudo apt install libudev-dev libhidapi-dev
+
