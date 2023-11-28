@@ -19,8 +19,7 @@ add_executable(tmate2 ${sources})
 
 target_link_libraries(tmate2
     ${GTK3_LIBRARIES}
-    libudev.so
-    libhidapi-hidraw.so
+    libhidapi
 )
 
 include(CTest)
