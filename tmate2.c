@@ -182,8 +182,8 @@ void click(void) {
     hid_write(handle, write_data.d, 44);
 }
 
+static unsigned int old_encoder_value[3];
 static void check_encoder(int which, unsigned int current) {
-    static unsigned int old_encoder_value[3];
     int o = old_encoder_value[which];
     if (current == o)
         return;
@@ -235,9 +235,9 @@ bool init_tmate2(void) {
 
         // get initial encoder values
         hid_read(handle, read_data.d, 9);
-        check_encoder(0, read_data.r.main_encoder);
-        check_encoder(1, read_data.r.e1_encoder);
-        check_encoder(2, read_data.r.e2_encoder);
+        old_encoder_value[0] = read_data.r.main_encoder;
+        old_encoder_value[1] = read_data.r.e1_encoder;
+        old_encoder_value[2] = read_data.r.e2_encoder;
         return true;
     }
     return false;
@@ -252,10 +252,18 @@ void close_tmate2(void) {
 }
 
 void tmate2_tick(void) {
+
     hid_read(handle, read_data.d, 9);
     check_encoder(0, read_data.r.main_encoder);
     check_encoder(1, read_data.r.e1_encoder);
     check_encoder(2, read_data.r.e2_encoder);
+
+    // static unsigned int old_target = 0;
+    // unsigned int target = read_data.r.e2_encoder;
+    // if (target != old_target) {
+    //     old_target = target;
+    //     printf("%04x\r\n",target);
+    // }
 
     check_button(0, read_data.r.main_button);
     check_button(1, read_data.r.e1_button);
