@@ -1,6 +1,6 @@
 #include <unistd.h>
 
-#include "tmate2.h"
+#include "tmate2/tmate2.h"
 
 bool loop = true;
 

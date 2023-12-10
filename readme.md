@@ -1,6 +1,6 @@
 # Tmate 2
-![TMate 2](tmate2_a.jpg)
-![TMate 2](tmate2.jpg)
+![TMate 2](resources/tmate2_a.jpg)
+![TMate 2](resources/tmate2.jpg)
 
 This is a C program that interfaces with the Elad (Woodbox Radio) Tmate 2.
 
@@ -30,7 +30,7 @@ To get the state of the encoders and buttons, read the device. The first byte is
 Note: Linux may install the USB device with root-only access. To install with the group PLUGDEV, install 50-TMATE2.rules into udev, usually /etc/udev/rules.d. Make sure the user is a member of the PLUGDEV group.
 
 ```
-#include "tmate2.c"
+#include "tmate2.h"
 ```
 
 call set_xxx_move where xxx is main, e1 or e2 to set a callback function that will be called whenever motion of the encoder is detected. callback function take an int parameter which indicates how far and in which direction the encoder has moved. Note: the main encoder indicates a positive delta for counter-clockwise, e1 and e2 indicate a positive delta for clockwise. This is just the way the hardware works. The callback function returns void.

@@ -29,7 +29,7 @@ union read_buffer {
 
 
 struct write_bitfield {
-    unsigned int :8;        // 1
+    unsigned int: 8;        // 1
 
     unsigned int: 1;
     unsigned int lp: 1;

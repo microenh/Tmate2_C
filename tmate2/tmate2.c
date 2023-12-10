@@ -11,7 +11,7 @@
 #define PRODUCT_ID 0x0614
 #define PRESS_CT 80;
 
-static void (*move[9])(int);
+static void (*move[3])(int);
 static void (*tap[9])(void);
 static void (*press[9])(void);
 
